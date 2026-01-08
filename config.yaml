@@ -1,0 +1,102 @@
+# Smart Health Monitoring Mirror Configuration
+
+system:
+  name: "Health Mirror"
+  version: "1.0.0"
+  log_level: "INFO"
+  log_dir: "./logs"
+
+vision:
+  camera_id: 0
+  resolution:
+    width: 320
+    height: 240
+  fps: 15
+  frame_skip: 3  # Process every Nth frame
+
+  face_detection:
+    method: "dnn"  # Options: haar, dnn
+    model_path: "./models/deploy.prototxt"
+    weights_path: "./models/res10_300x300_ssd_iter_140000.caffemodel"
+    confidence_threshold: 0.5
+
+  landmark_detection:
+    model_path: "./models/shape_predictor_68_face_landmarks.dat"
+
+  fatigue_thresholds:
+    ear_threshold: 0.20        # Eye Aspect Ratio
+    mar_threshold: 0.6         # Mouth Aspect Ratio (yawn)
+    ear_consec_frames: 3       # Frames for blink
+    perclos_window: 5          # Seconds for PERCLOS calculation
+    yawn_threshold: 2          # Yawns per minute for mild alert
+    yawn_threshold_severe: 4   # Yawns per minute for severe alert
+
+audio:
+  wake_word: "hey mirror"
+  porcupine:
+    access_key: "YOUR_PORCUPINE_API_KEY"
+    keyword_path: "./models/Hey-Mirror_en_raspberry-pi_v3_0_0.ppn"
+    sensitivity: 0.5
+
+  vosk:
+    model_path: "./models/vosk-model-small-en-us-0.15"
+    sample_rate: 16000
+
+  tts:
+    engine: "pico"  # Options: pico, espeak
+    language: "en-US"
+    speed: 150
+
+  commands:
+    - "status"
+    - "start check"
+    - "i'm okay"
+    - "set timer"
+    - "stop monitoring"
+
+hardware:
+  gpio_mode: "BCM"  # BCM or BOARD
+
+  led:
+    red_pin: 17
+    green_pin: 27
+    blue_pin: 22
+    pwm_frequency: 100
+
+  button:
+    pin: 23
+    pull_up_down: "PUD_UP"
+    bounce_time: 300  # ms
+    long_press_duration: 3.0  # seconds
+    very_long_press_duration: 10.0  # seconds
+
+ipc:
+  protocol: "tcp"
+  vision_port: 5555
+  audio_port: 5556
+  alert_port: 5557
+
+alerts:
+  levels:
+    normal:
+      led_color: [0, 255, 0]  # Green
+      led_mode: "solid"
+      voice_message: "Everything looks normal. You seem alert and well."
+
+    mild:
+      led_color: [255, 255, 0]  # Yellow
+      led_mode: "solid"
+      voice_message: "I'm noticing some signs of mild fatigue. Remember to take breaks if you need to."
+
+    severe:
+      led_color: [255, 0, 0]  # Red
+      led_mode: "breathing"
+      voice_message: "Alert: I'm detecting strong signs of fatigue. It might be a good time to step away and rest."
+
+  repeat_interval: 60  # seconds between repeated alerts
+
+performance:
+  vision_process_priority: -5  # Nice value
+  audio_process_priority: -10
+  watchdog_timeout: 30  # seconds
+  max_cpu_temp: 80  # Celsius

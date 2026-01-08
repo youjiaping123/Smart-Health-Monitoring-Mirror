@@ -1,0 +1,26 @@
+# Computer Vision
+opencv-python==4.8.1.78
+dlib==19.24.2
+imutils==0.5.4
+
+# Audio Processing
+pvporcupine==3.0.0
+vosk==0.3.45
+pyaudio==0.2.14
+
+# Communication
+pyzmq==25.1.2
+
+# Hardware Control (Raspberry Pi specific)
+RPi.GPIO==0.7.1
+
+# Utilities
+numpy==1.24.3
+PyYAML==6.0.1
+python-dotenv==1.0.0
+
+# Logging
+colorlog==6.8.0
+
+# Optional: Display
+matplotlib==3.7.3
