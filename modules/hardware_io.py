@@ -83,14 +83,25 @@ class HardwareIO:
         self._press_count = 0
 
     def _handle_button_event(self, channel):
-        """Handle button press with debouncing and multi-click detection"""
-        now = time.time()
+        """Handle button press - non-blocking, delegates to thread"""
+        # Don't block GPIO event thread - start processing in separate thread
+        threading.Thread(
+            target=self._process_button_press,
+            args=(time.time(),),
+            daemon=True
+        ).start()
+
+    def _process_button_press(self, press_start_time):
+        """Process button press in separate thread to avoid blocking GPIO events"""
+        if not GPIO_AVAILABLE:
+            return
+
         press_duration = 0
 
         # Wait for release and measure duration
         while GPIO.input(self.button_pin) == GPIO.LOW:
             time.sleep(0.01)
-            press_duration = time.time() - now
+            press_duration = time.time() - press_start_time
 
         btn_config = self.gpio_config["button"]
 
@@ -105,6 +116,7 @@ class HardwareIO:
             return
 
         # Handle single/double click
+        now = time.time()
         if now - self._last_press_time < 0.5:  # Within double-click window
             self._press_count += 1
             if self._press_count >= 2:
@@ -152,7 +164,12 @@ class HardwareIO:
         if not GPIO_AVAILABLE:
             return
 
-        for _ in range(int(duration)):
+        # Calculate how many breath cycles we can fit in the duration
+        # Each cycle = fade in + fade out ≈ 2 seconds (with steps=50)
+        cycle_time = (2.0 * steps) / 50.0  # Approximate cycle duration
+        num_cycles = max(1, int(duration / cycle_time))
+
+        for _ in range(num_cycles):
             # Fade in
             for i in range(steps):
                 brightness = (i / steps) * 100

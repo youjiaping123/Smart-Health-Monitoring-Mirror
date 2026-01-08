@@ -146,7 +146,17 @@ class VisionService:
             confidence = detections[0, 0, i, 2]
             if confidence > self.confidence_threshold:
                 box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
-                faces.append(box.astype("int"))
+                box = box.astype("int")
+
+                # Clamp coordinates to frame bounds to prevent dlib crashes
+                x1 = max(0, min(box[0], w - 1))
+                y1 = max(0, min(box[1], h - 1))
+                x2 = max(0, min(box[2], w - 1))
+                y2 = max(0, min(box[3], h - 1))
+
+                # Only add valid boxes
+                if x2 > x1 and y2 > y1:
+                    faces.append([x1, y1, x2, y2])
         return faces
 
     def _get_landmarks(self, gray, face_rect):

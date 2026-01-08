@@ -92,7 +92,7 @@ class AudioService:
                 if os.path.isdir(model_path):
                     self._vosk_model = Model(model_path)
                     sample_rate = vosk_cfg["sample_rate"]
-                    self._recognizer = Kaldi Recognizer(self._vosk_model, sample_rate)
+                    self._recognizer = KaldiRecognizer(self._vosk_model, sample_rate)
                     self._recognizer.SetWords(True)
                     self.logger.info("Vosk ASR initialized")
                 else:
@@ -262,16 +262,24 @@ class AudioService:
 
     def cleanup(self):
         """Cleanup audio resources"""
-        if self._porcupine:
-            self._porcupine.delete()
-        if self.audio_stream:
-            self.audio_stream.close()
-        if self._pa:
-            self._pa.terminate()
-        self.logger.info("Audio service cleaned up")
+        try:
+            if self._porcupine:
+                self._porcupine.delete()
+            if self.audio_stream:
+                self.audio_stream.close()
+            if self._pa:
+                self._pa.terminate()
+            self.logger.info("Audio service cleaned up")
+        except Exception as e:
+            # Suppress errors during cleanup
+            print(f"Error during audio cleanup: {e}")
 
     def __del__(self):
-        self.cleanup()
+        try:
+            self.cleanup()
+        except:
+            # Suppress all errors in __del__ to prevent issues during interpreter shutdown
+            pass
 
 
 if __name__ == "__main__":
